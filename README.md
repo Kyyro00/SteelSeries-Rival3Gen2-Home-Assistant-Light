@@ -214,3 +214,61 @@ light:
 Si alguna vez deseas eliminar el inicio automático del PC:
 - Ejecuta el archivo `uninstall_autostart.bat`.
 - Eliminará el acceso directo de la carpeta de inicio y cerrará el proceso activo.
+
+---
+
+## 📡 Alternativa recomendada si usas MQTT: Modo MQTT Discovery + `rivalcfg` (sin editar YAML ni reiniciar HA)
+
+Si ya tienes un broker **MQTT** (por ejemplo Mosquitto) configurado en Home Assistant, esta opción te permite controlar **toda la iluminación y los ajustes internos del ratón** sin tocar `configuration.yaml`, sin reiniciar Home Assistant y sin abrir puertos en el firewall de Windows.
+
+### Requisitos previos
+- **Python 3.10+** instalado en Windows.
+- **Broker MQTT** activo y conectado a tu Home Assistant.
+- **SteelSeries GG / Engine** abierto (necesario únicamente para la entidad **Luz RGB** en tiempo real; los ajustes de `rivalcfg` funcionan incluso sin SteelSeries GG).
+
+### Paso 1: Configurar las credenciales MQTT
+1. Entra en la carpeta [`mqtt_bridge/`](mqtt_bridge/).
+2. Copia [`config.example.json`](mqtt_bridge/config.example.json) como `config.json` y rellena los datos de tu broker:
+   ```json
+   {
+     "mqtt_host": "192.168.1.100",
+     "mqtt_port": 1883,
+     "mqtt_user": "tu_usuario_mqtt",
+     "mqtt_password": "tu_password_mqtt"
+   }
+   ```
+   *(Si tu broker no usa autenticación, deja `mqtt_user` y `mqtt_password` vacíos `""`).*
+
+### Paso 2: Instalar y activar el arranque automático
+Haz doble clic en [`mqtt_bridge/install_autostart.bat`](mqtt_bridge/install_autostart.bat) (no requiere permisos de administrador). El script se encargará automáticamente de:
+- Crear el entorno virtual `.venv` e instalar `paho-mqtt` y `rivalcfg`.
+- Cerrar cualquier instancia previa duplicada del puente.
+- Crear el acceso directo en Inicio de Windows (`shell:startup`) usando [`start_hidden.vbs`](mqtt_bridge/start_hidden.vbs).
+- Iniciar el puente en segundo plano.
+
+### Paso 3: Comprobación manual (opcional)
+Si quieres ver los logs de conexión en consola antes de dejarlo en segundo plano:
+```powershell
+cd mqtt_bridge
+.\.venv\Scripts\python.exe .\rival3_mqtt_bridge.py
+```
+Si muestra `[OK] Conectado al broker MQTT`, el dispositivo **SteelSeries Rival 3 Gen 2** aparecerá automáticamente en Home Assistant dentro de **Ajustes > Dispositivos y servicios > MQTT**.
+
+### Entidades incluidas en Home Assistant
+- **Controles**:
+  - **Luz RGB**: control en tiempo real (rueda de color y brillo) mediante SteelSeries GameSense, sin escribir en la memoria flash del ratón.
+- **Configuración (memoria interna del ratón vía `rivalcfg`)**:
+  - **Zona superior / Zona central / Zona inferior**: color RGB fijo por zona (`--z1`, `--z2`, `--z3`).
+  - **Luz al hacer clic**: color reactivo al pulsar botones (`-a`).
+  - **Brillo LED**: deslizador de `0` a `100 %` (`-l`).
+  - **Sensibilidad (DPI)**: deslizador de `200` a `8500 DPI` en pasos de `100` (`-s`).
+  - **Frecuencia (Hz)**: selector `125`, `250`, `500` o `1000` (`-p`).
+  - **Efecto arcoíris**: selector en español (`Todo el ratón`, `Zona inferior`, `Zona central`, `Zona superior`, etc.) e incluye **`Desactivado (color fijo)`** para volver a los colores de Z1/Z2/Z3 (`-e`).
+  - **Luz al encender**: comportamiento al arrancar el ratón (`Arcoíris`, `Apagada`, `Reactiva al clic`, `Arcoíris + Reactiva`) (`-d`).
+  - **Botón superior**: `Cambiar DPI (por defecto)`, `Desactivado` o `Clic central` (`-b`).
+  - **Restablecer de fábrica**: botón para restaurar los valores de serie (`-r`).
+
+> **Nota:** El cambio físico de DPI desde el botón del ratón ocurre dentro del hardware y no envía eventos al PC, por lo que no se refleja de vuelta en Home Assistant. Si quieres mantenerlos sincronizados, puedes desactivar el botón superior desde HA y ajustar el DPI desde ahí.
+
+### Desinstalación del modo MQTT
+Ejecuta [`mqtt_bridge/uninstall_autostart.bat`](mqtt_bridge/uninstall_autostart.bat) para eliminar el acceso directo de Inicio y cerrar el proceso activo.

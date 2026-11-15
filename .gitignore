@@ -3,3 +3,9 @@
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Entorno Python y configuración local del puente MQTT
+.venv/
+__pycache__/
+mqtt_bridge/config.json
+mqtt_bridge/state.json

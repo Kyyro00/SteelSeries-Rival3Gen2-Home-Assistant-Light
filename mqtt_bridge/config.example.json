@@ -1,0 +1,6 @@
+{
+  "mqtt_host": "IP_DE_TU_HOME_ASSISTANT",
+  "mqtt_port": 1883,
+  "mqtt_user": "TU_USUARIO_MQTT",
+  "mqtt_password": "TU_PASSWORD_MQTT"
+}
